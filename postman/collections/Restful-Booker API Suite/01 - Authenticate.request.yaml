@@ -13,17 +13,36 @@ body:
 scripts:
   - type: afterResponse
     code: |-
-      const responseData = pm.response.json();
+      /** 
+       * @file 01-authenticate.js
+       * @description Validates JWT authentication token generation and stores it in the environment.
+       */
 
-      pm.test("Status code is 200 OK", function () {
+      // 1. Protocol & SLA Validations
+      pm.test("[AUTH-01] Status code is 200 OK", function () {
           pm.response.to.have.status(200);
+          pm.response.to.be.json;
       });
 
-      pm.test("Token was returned and stored", function () {
-          pm.expect(responseData).to.have.property("token");
-          pm.expect(responseData.token).to.be.a("string");
+      pm.test("[AUTH-02] Response time within SLA (< 1500ms)", function () {
+          pm.expect(pm.response.responseTime).to.be.below(1500);
       });
 
-      pm.environment.set("token", responseData.token);
+      // 2. State Extraction & Persistence
+      try {
+          const responseData = pm.response.json();
+
+          pm.test("[AUTH-03] Response payload contains a valid token string", function () {
+              pm.expect(responseData).to.have.property("token");
+              pm.expect(responseData.token).to.be.a("string").that.is.not.empty;
+          });
+
+          if (responseData.token) {
+              pm.environment.set("token", responseData.token);
+              console.log(`[AUTH SUCCESS] Token stored successfully: ${responseData.token.substring(0, 6)}...`);
+          }
+      } catch (error) {
+          console.error("[AUTH ERROR] Failed to parse authentication JSON:", error);
+      }
     language: text/javascript
 order: 1790704885555

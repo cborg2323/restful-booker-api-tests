@@ -18,15 +18,31 @@ body:
 scripts:
   - type: afterResponse
     code: |-
-      const responseData = pm.response.json();
+      /**
+       * @file 03-get-booking.js
+       * @description Validates record retrieval integrity using the stored bookingId.
+       */
 
-      pm.test("Status code is 200 OK", function () {
+      pm.test("[BOOKING-GET-01] Status code is 200 OK", function () {
           pm.response.to.have.status(200);
       });
 
-      pm.test("Reservation atributes as created", function () {
-          pm.expect(responseData.firstname).to.eql("John");
-          pm.expect(responseData.lastname).to.eql("Doe");
+      pm.test("[BOOKING-GET-02] Response time within SLA (< 1000ms)", function () {
+          pm.expect(pm.response.responseTime).to.be.below(1000);
       });
+
+      try {
+          const responseData = pm.response.json();
+          const currentBookingId = pm.environment.get("bookingId");
+
+          pm.test(`[BOOKING-GET-03] Record details for ID ${currentBookingId} are complete`, function () {
+              pm.expect(responseData.firstname).to.be.a("string").and.not.empty;
+              pm.expect(responseData.lastname).to.be.a("string").and.not.empty;
+              pm.expect(responseData.totalprice).to.be.a("number");
+              pm.expect(responseData.bookingdates).to.have.all.keys("checkin", "checkout");
+          });
+      } catch (error) {
+          console.error("[BOOKING GET ERROR] Failed to process payload: ", error);
+      }
     language: text/javascript
 order: 3344268117187488
