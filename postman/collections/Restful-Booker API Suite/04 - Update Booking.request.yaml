@@ -5,4 +5,33 @@ headers:
   Content-Type: application/json
   Accept: application/json
   Cookie: token={{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      /**
+       * @file 04-update-booking.js
+       * @description Validates full resource updates (PUT) authorized via session cookie.
+       */
+
+      pm.test("[BOOKING-UPDATE-01] Status code is 200 OK", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("[BOOKING-UPDATE-02] Response time within SLA (<1500ms)", function () {
+          pm.expect(pm.response.responseTime).to.be.below(1500);
+      });
+
+      try {
+          const responseData = pm.response.json();
+
+          pm.test("[BOOKING-UPDATE-03] Total price, dates and aditional needs updated successfully", function () {
+              pm.expect(responseData.totalprice).to.eql(250);
+              pm.expect(responseData.additionalneeds).to.eql("Late Checkout");
+              pm.expect(responseData.bookingdates.checkout).to.eql("2026-10-12");
+          });
+
+      } catch (error) {
+          console.error("[BOOKING UPDATE ERROR] Failed to interpret response: ", error);
+      }
+    language: text/javascript
 order: 3586454795057313
