@@ -1,1 +1,10 @@
 $kind: collection
+scripts:
+  - type: http:beforeRequest
+    code: |-
+      /**
+       * @file collection-prerequest.js
+       * @description Collection-level pre-request script executed automatically before every request.
+       */
+      console.log(`[EXECUTION START] Executing request: "${pm.info.requestName}" | Timestamp: ${new Date().toISOString()}`);
+    language: text/javascript
