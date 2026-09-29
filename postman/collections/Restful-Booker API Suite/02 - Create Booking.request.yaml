@@ -1,0 +1,65 @@
+$kind: http-request
+url: "{{baseUrl}}/booking"
+method: POST
+headers:
+  Content-Type: application/json
+  Accept: application/json
+body:
+  type: json
+  content: |-
+    {
+        "firstname": "John",
+        "lastname": "Doe",
+        "totalprice": 250,
+        "depositpaid": true,
+        "bookingdates": {
+            "checkin": "2026-10-01",
+            "checkout": "2026-10-10"
+        },
+        "additionalneeds": "Breakfast"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      const responseData = pm.response.json()
+
+      pm.test("Status code is 200 OK", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Reservation ID succesfuly extracted", function () {
+          pm.expect(responseData.bookingid).to.be.a("number");
+          pm.environment.set("bookingId", responseData.bookingid);
+      });
+
+      const schema = {
+          "type": "object",
+          "required": ["bookingid", "booking"],
+          "properties": {
+              "bookingid": { "type": "number" },
+              "booking": {
+                  "type": "object",
+                  "required": ["firstname", "lastname", "totalprice", "depositpaid", "bookingdates"],
+                  "properties": {
+                      "firstname": { "type": "string" },
+                      "lastname": { "type": "string" },
+                      "totalprice": { "type": "number" },
+                      "depositpaid": { "type": "boolean" },
+                      "bookingdates": {
+                          "type": "object",
+                          "required": ["checkin", "checkout"],
+                          "properties": {
+                              "checkin": { "type": "string" },
+                              "checkout": { "type": "string" }
+                          }
+                      }
+                  }
+              }
+          }
+      };
+
+      pm.test("Valid contract JSON schema", function () {
+          pm.response.to.have.jsonSchema(schema);
+      });
+    language: text/javascript
+order: 3097265761698833

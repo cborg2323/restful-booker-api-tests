@@ -1,0 +1,32 @@
+$kind: http-request
+url: "{{baseUrl}}/booking/{{bookingId}}"
+method: GET
+headers:
+  - key: ""
+    value: ""
+    disabled: false
+  - key: Accept
+    value: application/json
+    disabled: false
+  - key: ""
+    value: ""
+    disabled: true
+    description: ""
+body:
+  type: json
+  content: ""
+scripts:
+  - type: afterResponse
+    code: |-
+      const responseData = pm.response.json();
+
+      pm.test("Status code is 200 OK", function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test("Reservation atributes as created", function () {
+          pm.expect(responseData.firstname).to.eql("John");
+          pm.expect(responseData.lastname).to.eql("Doe");
+      });
+    language: text/javascript
+order: 3344268117187488

@@ -1,0 +1,8 @@
+name: Restful-Booker Prod
+values:
+  - key: baseUrl
+    value: ''
+  - key: token
+    value: ''
+  - key: bookingId
+    value: ''
