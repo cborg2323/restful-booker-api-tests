@@ -1,0 +1,62 @@
+name: Newman API Tests & HTML Extra Report
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch: # Permite disparar manualmente pela aba Actions
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar Newman e Reporter HTML Extra
+        run: |
+          npm install -g newman newman-reporter-htmlextra
+
+      - name: Criar diretório de relatórios
+        run: mkdir -p reports/htmlextra
+
+      - name: Executar Testes com Newman
+        run: |
+          newman run "src/postman/Restful-Booker API Suite.postman_collection.json" \
+            -e "src/postman/Restful-Booker Prod.postman_environment.json" \
+            -r htmlextra \
+            --reporter-htmlextra-export "reports/htmlextra/index.html"
+
+      - name: Salvar Relatório como Artefato do Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: restful-booker-html-report
+          path: reports/htmlextra/index.html
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: Publicar Artefato no GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: reports/htmlextra/
+
+  deploy-pages:
+    needs: test-api
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy para o GitHub Pages
+        uses: actions/deploy-pages@v4

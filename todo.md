@@ -13,3 +13,4 @@ Postman + Newman + Docker: Maior demanda no Fiverr, excelente para demonstrar re
     - Badges: Adicione status da build do GitHub Actions.
     - Demonstração: Inclua prints ou GIFs do relatório HTML gerado pelo Newman.
     - Quick Start: Instruções claras para o cliente rodar localmente usando apenas docker compose up.
+- Criar um Makefile ou script Bash para rodar localmente ou no container gerando um arquivo local com um único comando
