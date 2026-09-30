@@ -1,4 +1,26 @@
 $kind: http-request
 url: "{{baseUrl}}/booking/{{bookingId}}"
-method: GET
+method: DELETE
+headers:
+  Content-Type: application/json
+  Cookie: token={{token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      /**
+       * @file 05-delete-booking.js
+       * @description Validates resource removal and performs environment state cleanup.
+       */
+
+      pm.test("[BOOKING-DELETE-01] Status code is 201 Created (Restful-Booker spec)", function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test("[BOOKING-DELETE-02] Confirmation string present in response body", function () {
+          pm.expect(pm.response.text()).to.include("Created");
+      });
+
+      pm.environment.unset("bookingId");
+      console.log("[CLEANUP] Removed temporary 'bookingId' variable from environment.");
+    language: text/javascript
 order: 3992325392822922

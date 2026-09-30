@@ -1,10 +1,24 @@
 $kind: http-request
 url: "{{baseUrl}}/booking/{{bookingId}}"
-method: GET
+method: PUT
 headers:
   Content-Type: application/json
   Accept: application/json
   Cookie: token={{token}}
+body:
+  type: json
+  content: |-
+    {
+        "firstname": "John",
+        "lastname": "Doe",
+        "totalprice": 300,
+        "depositpaid": true,
+        "bookingdates": {
+            "checkin": "2026-10-01",
+            "checkout": "2026-10-12"
+        },
+        "additionalneeds": "Late Checkout"
+    }
 scripts:
   - type: afterResponse
     code: |-
@@ -25,7 +39,7 @@ scripts:
           const responseData = pm.response.json();
 
           pm.test("[BOOKING-UPDATE-03] Total price, dates and aditional needs updated successfully", function () {
-              pm.expect(responseData.totalprice).to.eql(250);
+              pm.expect(responseData.totalprice).to.eql(300);
               pm.expect(responseData.additionalneeds).to.eql("Late Checkout");
               pm.expect(responseData.bookingdates.checkout).to.eql("2026-10-12");
           });

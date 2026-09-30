@@ -4,5 +4,3 @@ values:
     value: ''
   - key: token
     value: ''
-  - key: bookingId
-    value: ''
