@@ -1,0 +1,232 @@
+{
+  "info": {
+    "_postman_id": "44f149ab-f677-46c4-a6a6-eb1efc606156",
+    "name": "Restful-Booker API Suite",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "487208",
+    "_collection_link": "https://go.postman.co/collection/487208-44f149ab-f677-46c4-a6a6-eb1efc606156?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "01 - Authenticate",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "/** \n * @file 01-authenticate.js\n * @description Validates JWT authentication token generation and stores it in the environment.\n */\n\n// 1. Protocol & SLA Validations\npm.test(\"[AUTH-01] Status code is 200 OK\", function () {\n    pm.response.to.have.status(200);\n    pm.response.to.be.json;\n});\n\npm.test(\"[AUTH-02] Response time within SLA (< 1500ms)\", function () {\n    pm.expect(pm.response.responseTime).to.be.below(1500);\n});\n\n// 2. State Extraction & Persistence\ntry {\n    const responseData = pm.response.json();\n\n    pm.test(\"[AUTH-03] Response payload contains a valid token string\", function () {\n        pm.expect(responseData).to.have.property(\"token\");\n        pm.expect(responseData.token).to.be.a(\"string\").that.is.not.empty;\n    });\n\n    if (responseData.token) {\n        pm.environment.set(\"token\", responseData.token);\n        console.log(`[AUTH SUCCESS] Token stored successfully: ${responseData.token.substring(0, 6)}...`);\n    }\n} catch (error) {\n    console.error(\"[AUTH ERROR] Failed to parse authentication JSON:\", error);\n}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "",
+            "value": ""
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"password123\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/auth",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "02 - Create Booking",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "/**\n * @file 02-create-booking.js\n * @description Validates booking creation, AJV JSON Schema contract, and stores the bookingId.\n */\n\nconst bookingContractSchema = {\n    \"$schema\": \"http://json-schema.org/draft-07/schema#\",\n    \"type\": \"object\",\n    \"required\": [\"bookingid\", \"booking\"],\n    \"properties\": {\n        \"bookingid\": { \"type\": \"integer\", \"minimum\": 1 },\n        \"booking\": {\n            \"type\": \"object\",\n            \"required\": [\"firstname\", \"lastname\", \"totalprice\", \"depositpaid\", \"bookingdates\"],\n            \"properties\": {\n                \"firstname\": { \"type\": \"string\", \"minLength\": 1 },\n                \"lastname\": { \"type\": \"string\", \"minLength\": 1 },\n                \"totalprice\": { \"type\": \"number\", \"minimum\": 0 },\n                \"depositpaid\": { \"type\": \"boolean\" },\n                \"bookingdates\": {\n                    \"type\": \"object\",\n                    \"required\": [\"checkin\", \"checkout\"],\n                    \"properties\": {\n                        \"checkin\": { \"type\": \"string\" },\n                        \"checkout\": { \"type\": \"string\" }\n                    }\n                },\n                \"additionalneeds\": { \"type\": \"string\" }\n            }\n        }\n    }\n};\n\n// 1. Protocol & Header Validations\npm.test(\"[BOOKING-CREATE-01] Status code is 200 OK\", function () {\n    pm.response.to.have.status(200);\n    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"application/json\");\n});\n\npm.test(\"[BOOKING-CREATE-02] Response time within SLA (< 1500ms)\", function () {\n    pm.expect(pm.response.responseTime).to.be.below(1500);\n});\n\n// 2. Contract Testing\npm.test(\"[BOOKING-CREATE-03] Response matches JSON Schema contract\", function () {\n    pm.response.to.have.jsonSchema(bookingContractSchema);\n});\n\n// 3. Business Logic Validations\ntry {\n    const responseData = pm.response.json();\n\n    pm.test(\"[BOOKING-CREATE-04] Booking ID generated as a positive integer\", function () {\n        pm.expect(responseData.bookingid).to.be.a(\"number\").and.above(0);\n        pm.environment.set(\"bookingId\", responseData.bookingid);\n        console.log(`[BOOKING CREATED] Generated ID: ${responseData.bookingid}`);\n    });\n\n    pm.test(\"[BOOKING-CREATE-05] Attributes match requested payload\", function () {\n        const booking = responseData.booking;\n\n        pm.expect(booking.firstname).to.eql(\"John\");\n        pm.expect(booking.lastname).to.eql(\"Doe\");\n        pm.expect(booking.totalprice).to.eql(250);\n        pm.expect(booking.depositpaid).to.be.true;\n    })\n} catch (error) {\n    console.error(\"[BOOKING CREATE ERROR] Failed to parse JSON payload: \", error);\n}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"firstname\": \"John\",\n    \"lastname\": \"Doe\",\n    \"totalprice\": 250,\n    \"depositpaid\": true,\n    \"bookingdates\": {\n        \"checkin\": \"2026-10-01\",\n        \"checkout\": \"2026-10-10\"\n    },\n    \"additionalneeds\": \"Breakfast\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/booking",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "booking"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 - Get Booking By ID",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "/**\n * @file 03-get-booking.js\n * @description Validates record retrieval integrity using the stored bookingId.\n */\n\npm.test(\"[BOOKING-GET-01] Status code is 200 OK\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"[BOOKING-GET-02] Response time within SLA (< 1000ms)\", function () {\n    pm.expect(pm.response.responseTime).to.be.below(1000);\n});\n\ntry {\n    const responseData = pm.response.json();\n    const currentBookingId = pm.environment.get(\"bookingId\");\n\n    pm.test(`[BOOKING-GET-03] Record details for ID ${currentBookingId} are complete`, function () {\n        pm.expect(responseData.firstname).to.be.a(\"string\").and.not.empty;\n        pm.expect(responseData.lastname).to.be.a(\"string\").and.not.empty;\n        pm.expect(responseData.totalprice).to.be.a(\"number\");\n        pm.expect(responseData.bookingdates).to.have.all.keys(\"checkin\", \"checkout\");\n    });\n} catch (error) {\n    console.error(\"[BOOKING GET ERROR] Failed to process payload: \", error);\n}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/booking/{{bookingId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "booking",
+            "{{bookingId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 - Update Booking",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "/**\n * @file 04-update-booking.js\n * @description Validates full resource updates (PUT) authorized via session cookie.\n */\n\npm.test(\"[BOOKING-UPDATE-01] Status code is 200 OK\", function () {\n    pm.response.to.have.status(200);\n});\n\npm.test(\"[BOOKING-UPDATE-02] Response time within SLA (<1500ms)\", function () {\n    pm.expect(pm.response.responseTime).to.be.below(1500);\n});\n\ntry {\n    const responseData = pm.response.json();\n\n    pm.test(\"[BOOKING-UPDATE-03] Total price, dates and aditional needs updated successfully\", function () {\n        pm.expect(responseData.totalprice).to.eql(300);\n        pm.expect(responseData.additionalneeds).to.eql(\"Late Checkout\");\n        pm.expect(responseData.bookingdates.checkout).to.eql(\"2026-10-12\");\n    });\n\n} catch (error) {\n    console.error(\"[BOOKING UPDATE ERROR] Failed to interpret response: \", error);\n}"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Accept",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "token={{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"firstname\": \"John\",\n    \"lastname\": \"Doe\",\n    \"totalprice\": 300,\n    \"depositpaid\": true,\n    \"bookingdates\": {\n        \"checkin\": \"2026-10-01\",\n        \"checkout\": \"2026-10-12\"\n    },\n    \"additionalneeds\": \"Late Checkout\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/booking/{{bookingId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "booking",
+            "{{bookingId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "05 - Delete Booking",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "/**\n * @file 05-delete-booking.js\n * @description Validates resource removal and performs environment state cleanup.\n */\n\npm.test(\"[BOOKING-DELETE-01] Status code is 201 Created (Restful-Booker spec)\", function () {\n    pm.response.to.have.status(201);\n});\n\npm.test(\"[BOOKING-DELETE-02] Confirmation string present in response body\", function () {\n    pm.expect(pm.response.text()).to.include(\"Created\");\n});\n\npm.environment.unset(\"bookingId\");\nconsole.log(\"[CLEANUP] Removed temporary 'bookingId' variable from environment.\");"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Cookie",
+            "value": "token={{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/booking/{{bookingId}}?",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "booking",
+            "{{bookingId}}"
+          ],
+          "query": [
+            {
+              "key": "",
+              "value": ""
+            }
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
