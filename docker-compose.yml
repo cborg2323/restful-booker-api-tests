@@ -1,0 +1,10 @@
+services:
+  api-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: restful_booker_tests
+    # Executa com o UID/GID do seu utilizador para evitar problemas de permissão (root) na pasta reports
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - .:/etc/newman
